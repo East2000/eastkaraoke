@@ -531,6 +531,7 @@ function loadCurrentSong() {
     console.log("▶️ Loading new video:", song.videoId);
 
     // If player already exists, just load new video via API (faster for NEXT button)
+    console.log("🔍 Checking for existing player...", "tvPlayer:", !!window.tvPlayer, "player:", !!window.player);
     if (window.tvPlayer && typeof window.tvPlayer.loadVideoById === 'function') {
       console.log("♻️ Reusing existing player, loading new video via API");
       try {
@@ -606,7 +607,6 @@ function loadCurrentSong() {
                   console.log("🎬 YouTube Player Ready - Starting playback");
                   event.target.setVolume(100);
                   event.target.playVideo();
-                  window.tvPlayer = event.target;
                   console.log("▶️ Playback started via API");
                 },
                 'onStateChange': (event) => {
@@ -632,7 +632,9 @@ function loadCurrentSong() {
                 }
               }
             });
-            console.log("✅ Player object created:", !!window.player);
+            // Set tvPlayer immediately after creation for pause/resume control
+            window.tvPlayer = window.player;
+            console.log("✅ Player object created and tvPlayer set:", !!window.tvPlayer);
           }, 100);
         } catch (e) {
           console.log("⚠️ Player initialization error:", e.message);
