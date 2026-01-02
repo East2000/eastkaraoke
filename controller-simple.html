@@ -480,7 +480,11 @@
 
   <div id="queueControlModal" class="modal">
     <div class="modal-content">
-      <div class="modal-header">🎮 Queue Control <button class="modal-close" onclick="closeModal('queueControlModal')">×</button></div>
+      <div class="modal-header">🎮 Remote <button class="modal-close" onclick="closeModal('queueControlModal')">×</button></div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+        <button onclick="pauseSong()" style="background: #ff9900; font-size: 24px; padding: 15px;">⏸️</button>
+        <button onclick="playSong()" style="background: #00ff00; color: black; font-size: 24px; padding: 15px; font-weight: bold;">▶️</button>
+      </div>
       <button onclick="clearAllQueue()" style="background: #ff0000; margin-bottom: 10px; width: 100%;">🗑️ CLEAR QUEUE</button>
       <button onclick="nextSongForce()" style="background: #ff6600; width: 100%;">⏭️ SKIP SONG</button>
     </div>
@@ -1160,6 +1164,18 @@ function togglePlayPause() {
     btn.style.background = "#ffaa00";
     resumeVideoTV();  // Resume video in index.html
   }
+}
+
+// Pause button from Remote modal
+function pauseSong() {
+  isPlaying = false;
+  pauseVideoTV();
+}
+
+// Play button from Remote modal
+function playSong() {
+  isPlaying = true;
+  resumeVideoTV();
 }
 
 // Request pause from TV screen
