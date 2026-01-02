@@ -408,7 +408,7 @@
       <div class="section-title">� LIST RESERVE</div>      
       <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 15px;">
         <button onclick="stopSong()" style="background: #ff0000; font-weight: bold; padding: 12px;">⏹️ STOP</button>
-        <button onclick="playSong()" style="background: #00ff00; color: black; font-weight: bold; padding: 12px;">▶️ PLAY</button>
+        <button id="playPauseBtn" onclick="togglePlayPause()" style="background: #00ff00; color: black; font-weight: bold; padding: 12px;">▶️ PLAY</button>
         <button onclick="nextSong()" style="background: #ff6600; font-weight: bold; padding: 12px;">⏭️ NEXT</button>
       </div>
       <div id="queueList">
@@ -431,6 +431,7 @@ const ADMIN_PIN = "1234";
 let currentRole = null;
 let currentUserId = null;
 let currentUserName = null;
+let isPlaying = false; // Track play/pause state
 
 // WAIT FOR FIREBASE TO BE READY
 function waitForFirebase(callback) {
@@ -855,6 +856,13 @@ function nextSongForce() {
 
 // STOP SONG
 function stopSong() {
+  isPlaying = false;
+  const btn = document.getElementById("playPauseBtn");
+  if (btn) {
+    btn.textContent = "▶️ PLAY";
+    btn.style.background = "#00ff00";
+  }
+  
   waitForFirebase(() => {
     // Get current song info first to find and delete it from queue
     db.ref("currentSong").once("value", snap => {
@@ -898,6 +906,26 @@ function stopSong() {
       alert("⏹️ STOPPED");
     });
   });
+}
+
+// PLAY SONG
+// TOGGLE PLAY/PAUSE
+function togglePlayPause() {
+  const btn = document.getElementById("playPauseBtn");
+  
+  if (isPlaying) {
+    // Currently playing - pause
+    isPlaying = false;
+    btn.textContent = "▶️ PLAY";
+    btn.style.background = "#00ff00";
+    stopSong();
+  } else {
+    // Currently paused - play
+    isPlaying = true;
+    btn.textContent = "⏸️ PAUSE";
+    btn.style.background = "#ffaa00";
+    playSong();
+  }
 }
 
 // PLAY SONG
