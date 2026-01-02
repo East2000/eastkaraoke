@@ -537,8 +537,13 @@ function loadCurrentSong() {
         // Play video with volume via YouTube Player API after countdown
         setTimeout(() => {
           try {
+            // Destroy old player if exists
+            if (window.player && typeof window.player.destroy === 'function') {
+              window.player.destroy();
+            }
+            
             if (window.YT && window.YT.Player) {
-              player = new YT.Player('player', {
+              window.player = new YT.Player('player', {
                 events: {
                   'onReady': (event) => {
                     console.log("🎬 YouTube Player Ready - Starting playback");
