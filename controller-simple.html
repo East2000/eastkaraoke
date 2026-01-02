@@ -1082,77 +1082,92 @@ function clearAllQueue() {
   }
 }
 
-// STOP SONG - Clear current song, remove it from queue, and play next from queue
+// STOP SONG - Admin stops current song and plays next; User only if it's their song
 function nextSongForce() {
-  waitForFirebase(() => {
-    // First get the current song to remove it from queue
-    db.ref("currentSong").once("value", snap => {
-      const currentSong = snap.val();
-      
-      // Remove current song from Firebase
-      db.ref("currentSong").remove((error) => {
-        if (error) {
-          console.log("❌ Error stopping song:", error);
-          return;
-        }
-        console.log("⏹️ Current song stopped");
+  // For admin: stop and auto-play next
+  // For user: only if it's their song
+  if (currentRole === "admin") {
+    // Admin flow: stop and auto-play next
+    waitForFirebase(() => {
+      db.ref("currentSong").once("value", snap => {
+        const currentSong = snap.val();
         
-        // Remove the stopped song from queue if it exists
-        if (currentSong) {
-          db.ref("queue").once("value", queueSnap => {
-            const queue = queueSnap.val();
-            if (queue) {
-              Object.entries(queue).forEach(([key, song]) => {
-                if (song.videoId === currentSong.videoId && 
-                    song.title === currentSong.title &&
-                    song.userId === currentSong.userId) {
-                  db.ref("queue").child(key).remove();
-                  console.log("🗑️ Removed played song from queue");
-                }
-              });
-            }
-            
-            // Now fetch updated queue and play the next song
-            setTimeout(() => {
-              db.ref("queue").once("value", updatedSnap => {
-                const updatedQueue = updatedSnap.val();
-                if (updatedQueue && Object.keys(updatedQueue).length > 0) {
-                  // Get the first song in updated queue
-                  let firstKey = null;
-                  let firstSong = null;
-                  Object.entries(updatedQueue).forEach(([key, song]) => {
-                    if (!firstKey) {
-                      firstKey = key;
-                      firstSong = song;
-                    }
-                  });
-                  
-                  if (firstSong) {
-                    // Set it as current song
-                    const songData = {
-                      videoId: firstSong.videoId,
-                      title: firstSong.title,
-                      userId: firstSong.userId,
-                      userName: firstSong.userName,
-                      timestamp: Date.now()
-                    };
-                    
-                    db.ref("currentSong").set(songData, (error) => {
-                      if (!error) {
-                        console.log("▶️ Next song auto-playing:", firstSong.title);
+        db.ref("currentSong").remove((error) => {
+          if (error) {
+            console.log("❌ Error stopping song:", error);
+            return;
+          }
+          console.log("⏹️ Current song stopped");
+          
+          if (currentSong) {
+            db.ref("queue").once("value", queueSnap => {
+              const queue = queueSnap.val();
+              if (queue) {
+                Object.entries(queue).forEach(([key, song]) => {
+                  if (song.videoId === currentSong.videoId && 
+                      song.title === currentSong.title &&
+                      song.userId === currentSong.userId) {
+                    db.ref("queue").child(key).remove();
+                    console.log("🗑️ Removed played song from queue");
+                  }
+                });
+              }
+              
+              setTimeout(() => {
+                db.ref("queue").once("value", updatedSnap => {
+                  const updatedQueue = updatedSnap.val();
+                  if (updatedQueue && Object.keys(updatedQueue).length > 0) {
+                    let firstKey = null;
+                    let firstSong = null;
+                    Object.entries(updatedQueue).forEach(([key, song]) => {
+                      if (!firstKey) {
+                        firstKey = key;
+                        firstSong = song;
                       }
                     });
+                    
+                    if (firstSong) {
+                      const songData = {
+                        videoId: firstSong.videoId,
+                        title: firstSong.title,
+                        userId: firstSong.userId,
+                        userName: firstSong.userName,
+                        timestamp: Date.now()
+                      };
+                      
+                      db.ref("currentSong").set(songData, (error) => {
+                        if (!error) {
+                          console.log("▶️ Next song auto-playing:", firstSong.title);
+                        }
+                      });
+                    }
+                  } else {
+                    console.log("📭 Queue is empty");
                   }
-                } else {
-                  console.log("📭 Queue is empty");
-                }
-              });
-            }, 200);
+                });
+              }, 200);
+            });
+          }
+        });
+      });
+    });
+  } else if (currentRole === "user" && currentUserId) {
+    // User flow: only stop their own songs from queue
+    waitForFirebase(() => {
+      db.ref("queue").once("value", snap => {
+        const queue = snap.val();
+        if (queue) {
+          Object.entries(queue).forEach(([key, song]) => {
+            if (song.userId === currentUserId) {
+              db.ref("queue").child(key).remove();
+              console.log("✅ Your song removed from queue:", song.title);
+              return;
+            }
           });
         }
       });
     });
-  });
+  }
 }
 
 // ===== KARAOKE CONTROL FUNCTIONS =====
