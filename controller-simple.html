@@ -381,6 +381,15 @@
     <button onclick="adminLogout()" class="logout-btn">🚪 LOGOUT</button>
 
     <div class="section">
+      <div class="section-title">🔐 Change Admin PIN</div>
+      <input type="password" id="currentAdminPin" placeholder="Current PIN" autocomplete="off">
+      <input type="password" id="adminNewPin" placeholder="New PIN" autocomplete="off">
+      <input type="password" id="adminConfirmPin" placeholder="Confirm New PIN" autocomplete="off">
+      <button onclick="changeAdminPin()" style="background: #00d4ff; margin-bottom: 15px;">Change PIN</button>
+      <div id="changeAdminMsg"></div>
+    </div>
+
+    <div class="section">
       <div class="section-title">➕ CREATE NEW SINGER</div>
       <input type="text" id="newUserName" placeholder="Username">
       <input type="password" id="newUserPassword" placeholder="Password">
@@ -596,6 +605,45 @@ async function saveAdminNewPin() {
   } catch (e) {
     console.error('saveAdminNewPin error', e);
     msg.innerHTML = '<div class="info-box" style="color: #ff0000; border-color: #ff0000;">Error saving new PIN</div>';
+  }
+}
+
+// Change admin PIN from admin dashboard (requires current PIN)
+async function changeAdminPin() {
+  const cur = document.getElementById('currentAdminPin').value.trim();
+  const a = document.getElementById('adminNewPin').value.trim();
+  const b = document.getElementById('adminConfirmPin').value.trim();
+  const msg = document.getElementById('changeAdminMsg');
+  msg.innerHTML = '';
+  if (!cur || !a || !b) {
+    msg.innerHTML = '<div class="info-box" style="color: #ff0000; border-color: #ff0000;">Fill all fields</div>';
+    return;
+  }
+  if (a.length < 4) {
+    msg.innerHTML = '<div class="info-box" style="color: #ff0000; border-color: #ff0000;">New PIN must be at least 4 characters</div>';
+    return;
+  }
+  if (a !== b) {
+    msg.innerHTML = '<div class="info-box" style="color: #ff0000; border-color: #ff0000;">PINs do not match</div>';
+    return;
+  }
+  try {
+    const curHash = await hashPin(cur);
+    const storedHash = await getAdminPinHash();
+    if (curHash !== storedHash) {
+      msg.innerHTML = '<div class="info-box" style="color: #ff0000; border-color: #ff0000;">Current PIN is incorrect</div>';
+      return;
+    }
+    const newHash = await hashPin(a);
+    await setAdminPinHash(newHash);
+    msg.innerHTML = '<div class="info-box" style="color: #00ff00; border-color: #00ff00;">✅ PIN updated successfully</div>';
+    // clear inputs
+    document.getElementById('currentAdminPin').value = '';
+    document.getElementById('adminNewPin').value = '';
+    document.getElementById('adminConfirmPin').value = '';
+  } catch (e) {
+    console.error('changeAdminPin error', e);
+    msg.innerHTML = '<div class="info-box" style="color: #ff0000; border-color: #ff0000;">Error updating PIN</div>';
   }
 }
 
