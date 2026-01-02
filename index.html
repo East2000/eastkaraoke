@@ -548,7 +548,11 @@ function loadCurrentSong() {
     // YouTube Player API for actual playback control
     setTimeout(() => {
       try {
+        console.log("🔍 Checking YouTube API availability...", !!window.YT, !!window.YT?.Player);
+        
         if (window.YT && window.YT.Player) {
+          console.log("✅ YouTube API available, initializing player...");
+          
           // Destroy old player if exists
           if (window.player && typeof window.player.destroy === 'function') {
             window.player.destroy();
@@ -577,6 +581,9 @@ function loadCurrentSong() {
               }
             }
           });
+        } else {
+          console.log("⚠️ YouTube API not available yet, will retry...");
+          setTimeout(arguments.callee, 500);
         }
       } catch (e) {
         console.log("⚠️ Player initialization error:", e.message);
