@@ -1082,11 +1082,16 @@ function clearAllQueue() {
   }
 }
 
-// SKIP SONG
+// STOP SONG - Clear current song
 function nextSongForce() {
   waitForFirebase(() => {
-    db.ref("currentSong").remove();
-    alert("⏭️ Song skipped");
+    db.ref("currentSong").remove((error) => {
+      if (error) {
+        console.log("❌ Error stopping song:", error);
+      } else {
+        console.log("⏹️ Current song stopped");
+      }
+    });
   });
 }
 
