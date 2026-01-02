@@ -484,96 +484,77 @@ function loadCurrentSong() {
 
     console.log("▶️ Loading new video:", song.videoId);
 
-    // Show countdown overlay
-    const countdownOverlay = document.getElementById("countdownOverlay");
-    const countdownText = document.getElementById("countdownText");
+    // Get the current player container
+    const playerElement = document.getElementById("player");
+    const playerContainer = playerElement?.parentElement;
     
-    // Check if countdown should be skipped (for PLAY button immediate playback)
-    const shouldSkipCountdown = song.skipCountdown === true;
-    
-    if (countdownOverlay && !shouldSkipCountdown) {
-      countdownOverlay.classList.add("show");
+    if (!playerContainer) {
+      console.error("❌ Player container not found!");
+      return;
     }
 
-    // Start countdown: 3, 2, 1 (or skip if flag is set)
-    let count = 3;
-    const countdownInterval = setInterval(() => {
-      if (countdownText) {
-        countdownText.textContent = count;
-      }
-      count--;
-      
-      if (count < 0) {
-        clearInterval(countdownInterval);
-        // Hide countdown and load video
-        if (countdownOverlay) {
-          countdownOverlay.classList.remove("show");
-        }
-
-        // Create new iframe to force reload with autoplay
-        const newIframe = document.createElement("iframe");
-        newIframe.id = "player";
-        newIframe.allowFullscreen = true;
-        newIframe.style.width = "100%";
-        newIframe.style.flex = "1";
-        newIframe.style.border = "none";
-        newIframe.style.display = "block";
-        newIframe.style.position = "relative";
-        
-        // Build YouTube embed URL - no autoplay yet, we'll control via API
-        const youtubeUrl = `https://www.youtube.com/embed/${song.videoId}?controls=0&enablejsapi=1&modestbranding=1`;
-        newIframe.src = youtubeUrl;
-        
-        console.log("🔗 Loading YouTube URL:", youtubeUrl);
-        
-        // Clear and add new iframe (but keep countdown overlay inside)
-        const countdownDiv = playerContainer.querySelector("#countdownOverlay");
-        playerContainer.innerHTML = "";
-        playerContainer.appendChild(newIframe);
-        if (countdownDiv) {
-          playerContainer.appendChild(countdownDiv);
+    // Create new iframe to force reload with autoplay
+    const newIframe = document.createElement("iframe");
+    newIframe.id = "player";
+    newIframe.allowFullscreen = true;
+    newIframe.style.width = "100%";
+    newIframe.style.flex = "1";
+    newIframe.style.border = "none";
+    newIframe.style.display = "block";
+    newIframe.style.position = "relative";
+    
+    // Build YouTube embed URL - no autoplay yet, we'll control via API
+    const youtubeUrl = `https://www.youtube.com/embed/${song.videoId}?controls=0&enablejsapi=1&modestbranding=1`;
+    newIframe.src = youtubeUrl;
+    
+    console.log("🔗 Loading YouTube URL:", youtubeUrl);
+    
+    // Clear and add new iframe (but keep countdown overlay inside)
+    const countdownDiv = playerContainer.querySelector("#countdownOverlay");
+    playerContainer.innerHTML = "";
+    playerContainer.appendChild(newIframe);
+    if (countdownDiv) {
+      playerContainer.appendChild(countdownDiv);
+    }
+    
+    // Update global reference
+    iframe = newIframe;
+    console.log("✅ Video iframe loaded and updated");
+    
+    // Play video with volume via YouTube Player API immediately
+    setTimeout(() => {
+      try {
+        // Destroy old player if exists
+        if (window.player && typeof window.player.destroy === 'function') {
+          window.player.destroy();
         }
         
-        // Update global reference
-        iframe = newIframe;
-        console.log("✅ Video iframe loaded and updated");
-        
-        // Play video with volume via YouTube Player API after countdown
-        setTimeout(() => {
-          try {
-            // Destroy old player if exists
-            if (window.player && typeof window.player.destroy === 'function') {
-              window.player.destroy();
+        if (window.YT && window.YT.Player) {
+          window.player = new YT.Player('player', {
+            events: {
+              'onReady': (event) => {
+                console.log("🎬 YouTube Player Ready - Starting playback");
+                // Set volume to 100 FIRST (before playing)
+                event.target.setVolume(100);
+                // Then play with sound
+                event.target.playVideo();
+                console.log("▶️ Video playing with full volume");
+              },
+              'onError': (event) => {
+                console.error("❌ YouTube Player Error:", event.data);
+              }
             }
-            
-            if (window.YT && window.YT.Player) {
-              window.player = new YT.Player('player', {
-                events: {
-                  'onReady': (event) => {
-                    console.log("🎬 YouTube Player Ready - Starting playback");
-                    // Set volume to 100 FIRST (before playing)
-                    event.target.setVolume(100);
-                    // Then play with sound
-                    event.target.playVideo();
-                    console.log("▶️ Video playing with full volume");
-                  },
-                  'onError': (event) => {
-                    console.error("❌ YouTube Player Error:", event.data);
-                  }
-                }
-              });
-            }
-          } catch (e) {
-            console.log("⚠️ Could not initialize player:", e.message);
-          }
-        }, 100);
-        
-        // Update singer display
-        if (singerDisplay) {
-          singerDisplay.innerText = song.userName || "Unknown Singer";
+          });
         }
+      } catch (e) {
+        console.log("⚠️ Could not initialize player:", e.message);
       }
-    }, shouldSkipCountdown ? 1 : 1000);
+    }, 100);
+    
+    // Update singer display
+    if (singerDisplay) {
+      singerDisplay.innerText = song.userName || "Unknown Singer";
+    }
   }, error => {
     console.error("❌ Firebase listener error:", error);
   });
