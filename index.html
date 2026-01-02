@@ -516,8 +516,8 @@ function loadCurrentSong() {
         newIframe.style.display = "block";
         newIframe.style.position = "relative";
         
-        // Build YouTube embed URL with autoplay
-        const youtubeUrl = `https://www.youtube.com/embed/${song.videoId}?autoplay=1&controls=0&enablejsapi=1&modestbranding=1`;
+        // Build YouTube embed URL with autoplay and muted (required for browser autoplay)
+        const youtubeUrl = `https://www.youtube.com/embed/${song.videoId}?autoplay=1&mute=1&controls=0&enablejsapi=1&modestbranding=1`;
         newIframe.src = youtubeUrl;
         
         console.log("🔗 Loading YouTube URL:", youtubeUrl);
@@ -533,6 +533,21 @@ function loadCurrentSong() {
         // Update global reference
         iframe = newIframe;
         console.log("✅ Video iframe loaded and updated");
+        
+        // Unmute video after countdown completes (browser allows programmatic unmute after autoplay)
+        setTimeout(() => {
+          try {
+            // Set volume to 100 via postMessage (YouTube IFrame API)
+            iframe.contentWindow.postMessage({
+              event: 'command',
+              func: 'setVolume',
+              args: [100]
+            }, '*');
+            console.log("🔊 Video unmuted");
+          } catch (e) {
+            console.log("ℹ️ Volume control may require user interaction");
+          }
+        }, 500);
         
         // Update singer display
         if (singerDisplay) {
