@@ -397,6 +397,12 @@ console.log("✅ Variables initialized:", {
   qrCode: !!qrCode
 });
 
+// Setup player control listener immediately
+setTimeout(() => {
+  setupPlayerControlListener();
+  loadCurrentSong();
+}, 1000);
+
 let currentLyricIndex = 0;
 let playStartTime = 0;
 let player = null;
@@ -408,6 +414,32 @@ let songStats = {
   totalPausedTime: 0,
   wasSkipped: false,
   completionPercentage: 100
+};
+
+// Initialize player control listener on page load
+function setupPlayerControlListener() {
+  console.log("📡 Setting up player control listener from controller...");
+  
+  if (window.db) {
+    db.ref("playerControl").on("value", snap => {
+      const control = snap.val();
+      if (control && control.action && window.tvPlayer) {
+        console.log("📡 Player control command received:", control.action);
+        
+        if (control.action === "pause") {
+          window.tvPlayer.pauseVideo();
+          console.log("⏸️ Video paused via remote");
+        } else if (control.action === "play") {
+          window.tvPlayer.playVideo();
+          console.log("▶️ Video resumed via remote");
+        }
+      }
+    });
+  } else {
+    console.log("⚠️ Firebase not ready, will setup later...");
+    // Retry after delay
+    setTimeout(setupPlayerControlListener, 1000);
+  }
 };
 
 // YouTube IFrame API - required for player state detection
@@ -560,24 +592,6 @@ function loadCurrentSong() {
   });
   
   console.log("✅ Listener setup complete");
-  
-  // Listen for pause/play commands from controller
-  if (window.db) {
-    db.ref("playerControl").on("value", snap => {
-      const control = snap.val();
-      if (control && control.action && window.tvPlayer) {
-        console.log("📡 Player control command received:", control.action);
-        
-        if (control.action === "pause") {
-          window.tvPlayer.pauseVideo();
-          console.log("⏸️ Video paused via remote");
-        } else if (control.action === "play") {
-          window.tvPlayer.playVideo();
-          console.log("▶️ Video resumed via remote");
-        }
-      }
-    });
-  }
 }
 
 // Display lyrics with timing
