@@ -537,8 +537,7 @@ function loadCurrentSong() {
       try {
         window.tvPlayer.loadVideoById(song.videoId);
         window.tvPlayer.setVolume(100);
-        window.tvPlayer.playVideo();
-        console.log("✅ Video loaded via loadVideoById and auto-playing");
+        console.log("✅ Video loaded via loadVideoById - waiting for onReady to play");
       } catch (e) {
         console.log("⚠️ Error loading video via API:", e.message);
       }
@@ -607,7 +606,7 @@ function loadCurrentSong() {
                   console.log("🎬 YouTube Player Ready - Starting playback");
                   event.target.setVolume(100);
                   event.target.playVideo();
-                  console.log("▶️ Playback started via API");
+                  console.log("▶️ Playback started via onReady callback");
                 },
                 'onStateChange': (event) => {
                   const states = {
