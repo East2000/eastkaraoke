@@ -503,8 +503,8 @@ function loadCurrentSong() {
     newIframe.style.display = "block";
     newIframe.style.position = "relative";
     
-    // Build YouTube embed URL - no autoplay yet, we'll control via API
-    const youtubeUrl = `https://www.youtube.com/embed/${song.videoId}?controls=0&enablejsapi=1&modestbranding=1`;
+    // Build YouTube embed URL with autoplay and mute (browser requirement for autoplay)
+    const youtubeUrl = `https://www.youtube.com/embed/${song.videoId}?autoplay=1&mute=1&controls=0&enablejsapi=1&modestbranding=1`;
     newIframe.src = youtubeUrl;
     
     console.log("🔗 Loading YouTube URL:", youtubeUrl);
@@ -533,12 +533,13 @@ function loadCurrentSong() {
           window.player = new YT.Player('player', {
             events: {
               'onReady': (event) => {
-                console.log("🎬 YouTube Player Ready - Starting playback");
-                // Set volume to 100 FIRST (before playing)
-                event.target.setVolume(100);
-                // Then play with sound
-                event.target.playVideo();
-                console.log("▶️ Video playing with full volume");
+                console.log("🎬 YouTube Player Ready");
+                // Unmute the auto-played video
+                setTimeout(() => {
+                  event.target.unMute();
+                  event.target.setVolume(100);
+                  console.log("🔊 Video unmuted with full volume");
+                }, 200);
               },
               'onError': (event) => {
                 console.error("❌ YouTube Player Error:", event.data);
