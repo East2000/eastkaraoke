@@ -1220,64 +1220,23 @@ function resumeVideoTV() {
   });
 }
 
-// PLAY SONG
-function playSong() {
-  if (!currentUserId) {
-    alert("❌ Not logged in!");
+// STOP SONG
+function stopSong() {
+  if (!currentUserId && !currentRole) {
+    console.log("❌ Not logged in");
     return;
   }
   
-  console.log("▶️ PLAY button clicked by user:", currentUserId);
-  
   waitForFirebase(() => {
-    console.log("📤 Firebase ready, fetching queue...");
-    
-    db.ref("queue").once("value", snap => {
-      const queue = snap.val();
-      console.log("📋 Queue data:", queue);
-      
-      if (!queue) {
-        alert("❌ Queue is empty!");
-        return;
+    db.ref("playerControl").set({
+      action: "stop",
+      timestamp: Date.now()
+    }, (error) => {
+      if (error) {
+        console.log("❌ Error sending stop command:", error);
+      } else {
+        console.log("⏹️ Stop command sent to TV");
       }
-      
-      // Find first song by current user
-      let firstSong = null;
-      let firstKey = null;
-      
-      Object.entries(queue).forEach(([key, song]) => {
-        if (song.userId === currentUserId && !firstSong) {
-          firstSong = song;
-          firstKey = key;
-          console.log("✅ Found first song:", song.title);
-        }
-      });
-      
-      if (!firstSong) {
-        alert("❌ No songs in your queue!");
-        return;
-      }
-      
-      // Set as current song with timestamp to force update
-      const songData = {
-        videoId: firstSong.videoId,
-        title: firstSong.title,
-        userId: currentUserId,
-        userName: currentUserName,
-        timestamp: Date.now()
-      };
-      
-      console.log("📤 Writing to currentSong:", songData);
-      
-      db.ref("currentSong").set(songData, error => {
-        if (error) {
-          console.error("❌ Firebase write error:", error);
-          alert("❌ Error: " + error);
-        } else {
-          console.log("✅ Successfully wrote to Firebase!");
-          alert("▶️ NOW PLAYING: " + firstSong.title);
-        }
-      });
     });
   });
 }
