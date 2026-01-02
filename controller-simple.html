@@ -1152,63 +1152,67 @@ function nextSongForce() {
       });
     });
   } else if (currentRole === "user" && currentUserId) {
-    // User flow: stop current song, remove their song from queue, auto-play next
+    // User flow: same as admin - stop current song and auto-play next
     waitForFirebase(() => {
-      // Clear the current song first
-      db.ref("currentSong").remove((error) => {
-        if (error) {
-          console.log("❌ Error stopping song:", error);
-          return;
-        }
-        console.log("⏹️ Current song stopped");
+      db.ref("currentSong").once("value", snap => {
+        const currentSong = snap.val();
         
-        // Then remove user's first song from queue
-        db.ref("queue").once("value", snap => {
-          const queue = snap.val();
-          let removedSong = null;
-          
-          if (queue) {
-            Object.entries(queue).forEach(([key, song]) => {
-              if (song.userId === currentUserId && !removedSong) {
-                removedSong = song;
-                db.ref("queue").child(key).remove();
-                console.log("✅ Your song removed from queue:", song.title);
-              }
-            });
+        db.ref("currentSong").remove((error) => {
+          if (error) {
+            console.log("❌ Error stopping song:", error);
+            return;
           }
+          console.log("⏹️ Current song stopped");
           
-          // Auto-play next song after a short delay
-          setTimeout(() => {
-            db.ref("queue").once("value", updatedSnap => {
-              const updatedQueue = updatedSnap.val();
-              if (updatedQueue && Object.keys(updatedQueue).length > 0) {
-                let firstKey = null;
-                let firstSong = null;
-                Object.entries(updatedQueue).forEach(([key, song]) => {
-                  if (!firstKey) {
-                    firstKey = key;
-                    firstSong = song;
+          if (currentSong) {
+            db.ref("queue").once("value", queueSnap => {
+              const queue = queueSnap.val();
+              if (queue) {
+                Object.entries(queue).forEach(([key, song]) => {
+                  if (song.videoId === currentSong.videoId && 
+                      song.title === currentSong.title &&
+                      song.userId === currentSong.userId) {
+                    db.ref("queue").child(key).remove();
+                    console.log("🗑️ Removed played song from queue");
                   }
                 });
-                
-                if (firstSong) {
-                  const songData = {
-                    videoId: firstSong.videoId,
-                    title: firstSong.title,
-                    userId: firstSong.userId,
-                    userName: firstSong.userName,
-                    timestamp: Date.now()
-                  };
-                  
-                  db.ref("currentSong").set(songData, (error) => {
-                    if (!error) {
-                      console.log("▶️ Next song auto-playing:", firstSong.title);
-                    }
-                  });
-                }
               }
+              
+              setTimeout(() => {
+                db.ref("queue").once("value", updatedSnap => {
+                  const updatedQueue = updatedSnap.val();
+                  if (updatedQueue && Object.keys(updatedQueue).length > 0) {
+                    let firstKey = null;
+                    let firstSong = null;
+                    Object.entries(updatedQueue).forEach(([key, song]) => {
+                      if (!firstKey) {
+                        firstKey = key;
+                        firstSong = song;
+                      }
+                    });
+                    
+                    if (firstSong) {
+                      const songData = {
+                        videoId: firstSong.videoId,
+                        title: firstSong.title,
+                        userId: firstSong.userId,
+                        userName: firstSong.userName,
+                        timestamp: Date.now()
+                      };
+                      
+                      db.ref("currentSong").set(songData, (error) => {
+                        if (!error) {
+                          console.log("▶️ Next song auto-playing:", firstSong.title);
+                        }
+                      });
+                    }
+                  } else {
+                    console.log("📭 Queue is empty");
+                  }
+                });
+              }, 200);
             });
-          }, 200);
+          }
         });
       });
     });
