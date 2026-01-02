@@ -1291,6 +1291,31 @@ function playSong() {
   resumeVideoTV();
 }
 
+// Toggle play/pause for singer dashboard button
+function togglePlayPause() {
+  if (!currentUserId && !currentRole) {
+    alert("❌ Not logged in!");
+    return;
+  }
+
+  const btn = document.getElementById("playPauseBtn");
+  isPlaying = !isPlaying;
+
+  if (isPlaying) {
+    if (btn) {
+      btn.textContent = "⏸️";
+      btn.style.background = "#ff9900";
+    }
+    resumeVideoTV();
+  } else {
+    if (btn) {
+      btn.textContent = "▶️";
+      btn.style.background = "#00ff00";
+    }
+    pauseVideoTV();
+  }
+}
+
 // Request pause from TV screen
 function pauseVideoTV() {
   if (!currentUserId && !currentRole) {
