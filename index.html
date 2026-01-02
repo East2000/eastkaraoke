@@ -408,8 +408,7 @@ function generateQR() {
 }
 
 // Load video from current song
-let lastVideoId = null;
-let listenerActive = false;
+let lastTimestamp = null;
 
 function loadCurrentSong() {
   if (!window.db) {
@@ -430,15 +429,15 @@ function loadCurrentSong() {
       return;
     }
 
-    console.log("🎬 Current song detected:", song.title, "ID:", song.videoId);
+    console.log("🎬 Current song detected:", song.title, "ID:", song.videoId, "Timestamp:", song.timestamp);
 
-    // Only load if it's a different video
-    if (song.videoId === lastVideoId) {
-      console.log("⏭️ Same video as before, skipping reload");
+    // Only load if it's a new song (different timestamp)
+    if (song.timestamp === lastTimestamp) {
+      console.log("⏭️ Same request as before, skipping reload");
       return;
     }
 
-    lastVideoId = song.videoId;
+    lastTimestamp = song.timestamp;
     console.log("▶️ Loading new video:", song.videoId);
 
     // Get the current player container
