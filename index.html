@@ -560,6 +560,24 @@ function loadCurrentSong() {
   });
   
   console.log("✅ Listener setup complete");
+  
+  // Listen for pause/play commands from controller
+  if (window.db) {
+    db.ref("playerControl").on("value", snap => {
+      const control = snap.val();
+      if (control && control.action && window.tvPlayer) {
+        console.log("📡 Player control command received:", control.action);
+        
+        if (control.action === "pause") {
+          window.tvPlayer.pauseVideo();
+          console.log("⏸️ Video paused via remote");
+        } else if (control.action === "play") {
+          window.tvPlayer.playVideo();
+          console.log("▶️ Video resumed via remote");
+        }
+      }
+    });
+  }
 }
 
 // Display lyrics with timing

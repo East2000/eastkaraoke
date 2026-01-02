@@ -930,22 +930,44 @@ function togglePlayPause() {
 
 // Request pause from TV screen
 function pauseVideoTV() {
-  if (window.tvPlayer && window.tvPlayer.pauseVideo) {
-    window.tvPlayer.pauseVideo();
-    console.log("⏸️ Video paused");
-  } else {
-    console.log("ℹ️ TV player not available");
+  if (!currentUserId) {
+    console.log("❌ Not logged in");
+    return;
   }
+  
+  waitForFirebase(() => {
+    db.ref("playerControl").set({
+      action: "pause",
+      timestamp: Date.now()
+    }, (error) => {
+      if (error) {
+        console.log("❌ Error sending pause command:", error);
+      } else {
+        console.log("⏸️ Pause command sent to TV");
+      }
+    });
+  });
 }
 
 // Request resume from TV screen
 function resumeVideoTV() {
-  if (window.tvPlayer && window.tvPlayer.playVideo) {
-    window.tvPlayer.playVideo();
-    console.log("▶️ Video resumed");
-  } else {
-    console.log("ℹ️ TV player not available");
+  if (!currentUserId) {
+    console.log("❌ Not logged in");
+    return;
   }
+  
+  waitForFirebase(() => {
+    db.ref("playerControl").set({
+      action: "play",
+      timestamp: Date.now()
+    }, (error) => {
+      if (error) {
+        console.log("❌ Error sending play command:", error);
+      } else {
+        console.log("▶️ Play command sent to TV");
+      }
+    });
+  });
 }
 
 // PLAY SONG
