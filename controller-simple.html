@@ -1180,7 +1180,7 @@ function playSong() {
 
 // Request pause from TV screen
 function pauseVideoTV() {
-  if (!currentUserId) {
+  if (!currentUserId && !currentRole) {
     console.log("❌ Not logged in");
     return;
   }
@@ -1201,7 +1201,7 @@ function pauseVideoTV() {
 
 // Request resume from TV screen
 function resumeVideoTV() {
-  if (!currentUserId) {
+  if (!currentUserId && !currentRole) {
     console.log("❌ Not logged in");
     return;
   }
