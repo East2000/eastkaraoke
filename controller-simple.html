@@ -1277,23 +1277,7 @@ function stopSong() {
 
 // PLAY SONG
 // TOGGLE PLAY/PAUSE
-function togglePlayPause() {
-  const btn = document.getElementById("playPauseBtn");
-  
-  if (isPlaying) {
-    // Currently playing - pause the video
-    isPlaying = false;
-    btn.textContent = "▶️";
-    btn.style.background = "#00ff00";
-    pauseVideoTV();  // Pause video in index.html
-  } else {
-    // Currently paused - resume the video
-    isPlaying = true;
-    btn.textContent = "⏸️";
-    btn.style.background = "#ffaa00";
-    resumeVideoTV();  // Resume video in index.html
-  }
-}
+            db.ref("queue/" + key).remove();
 
 // Pause button from Remote modal
 function pauseSong() {
@@ -1329,42 +1313,65 @@ function pauseVideoTV() {
 }
 
 // Request resume from TV screen
-function resumeVideoTV() {
-  if (!currentUserId && !currentRole) {
+          // Clear current song
+          db.ref("currentSong").remove((error) => {
+            if (error) {
+              console.log("❌ Error stopping song:", error);
+              return;
+            }
+            console.log("⏹️ Current song stopped");
+        
+            if (currentSong) {
+              db.ref("queue").once("value", queueSnap => {
+                const queue = queueSnap.val();
+                if (queue) {
+                  Object.entries(queue).forEach(([key, song]) => {
+                    if (song.videoId === currentSong.videoId && 
+                        song.title === currentSong.title &&
+                        song.userId === currentSong.userId) {
+                      db.ref("queue").child(key).remove();
+                      console.log("🗑️ Removed played song from queue");
+                    }
+                  });
+                }
+            
+                setTimeout(() => {
+                  db.ref("queue").once("value", updatedSnap => {
+                    const updatedQueue = updatedSnap.val();
+                    if (updatedQueue && Object.keys(updatedQueue).length > 0) {
+                      let firstKey = null;
+                      let firstSong = null;
+                      Object.entries(updatedQueue).forEach(([key, song]) => {
+                        if (!firstKey) {
+                          firstKey = key;
+                          firstSong = song;
+                        }
+                      });
+                  
+                      if (firstSong) {
+                        const songData = {
+                          videoId: firstSong.videoId,
+                          title: firstSong.title,
+                          userId: firstSong.userId,
+                          userName: firstSong.userName,
+                          timestamp: Date.now()
+                        };
+                    
+                        db.ref("currentSong").set(songData, (error) => {
+                          if (!error) {
+                            console.log("▶️ Next song auto-playing:", firstSong.title);
+                          }
+                        });
+                      }
+                    } else {
+                      console.log("📭 Queue is empty");
+                    }
+                  });
+                }, 200);
+              });
+            }
+          });
     console.log("❌ Not logged in");
-    return;
-  }
-  
-  waitForFirebase(() => {
-    db.ref("playerControl").set({
-      action: "play",
-      timestamp: Date.now()
-    }, (error) => {
-      if (error) {
-        console.log("❌ Error sending play command:", error);
-      } else {
-        console.log("▶️ Play command sent to TV");
-      }
-    });
-  });
-}
-
-// STOP SONG
-function stopSong() {
-  if (!currentUserId && !currentRole) {
-    console.log("❌ Not logged in");
-    return;
-  }
-  
-  waitForFirebase(() => {
-    db.ref("playerControl").set({
-      action: "stop",
-      timestamp: Date.now()
-    }, (error) => {
-      if (error) {
-        console.log("❌ Error sending stop command:", error);
-      } else {
-        console.log("⏹️ Stop command sent to TV");
       }
     });
   });
