@@ -357,6 +357,16 @@
     <div id="adminLoginMsg"></div>
   </div>
 
+  <!-- FORCE CHANGE ADMIN PIN (first login) -->
+  <div id="adminChangePinSection" class="hidden">
+    <div class="section-title">Change Admin PIN</div>
+    <div id="adminChangeMsg"></div>
+    <div class="info-box" style="color: #ffd700; border-color: #ffd700;">For security, please change the default admin PIN.</div>
+    <input type="password" id="newAdminPin" placeholder="New Admin PIN" autocomplete="off">
+    <input type="password" id="confirmAdminPin" placeholder="Confirm New PIN" autocomplete="off">
+    <button onclick="saveAdminNewPin()" style="background: #00ff00; color: black; margin-bottom: 15px;">Save New PIN</button>
+  </div>
+
   <!-- USER LOGIN -->
   <div id="userLoginSection" class="hidden">
     <div class="section-title">Singer Login</div>
@@ -427,7 +437,19 @@
 <script src="js/firebase.js"></script>
 
 <script>
-const ADMIN_PIN = "1234";
+const DEFAULT_ADMIN_PIN = "1234";
+function getStoredAdminPin() {
+  const p = localStorage.getItem('karaoke_admin_pin');
+  if (!p) {
+    localStorage.setItem('karaoke_admin_pin', DEFAULT_ADMIN_PIN);
+    return DEFAULT_ADMIN_PIN;
+  }
+  return p;
+}
+function setStoredAdminPin(newPin) {
+  localStorage.setItem('karaoke_admin_pin', newPin);
+}
+
 let currentRole = null;
 let currentUserId = null;
 let currentUserName = null;
@@ -494,16 +516,43 @@ function backToLogin() {
 // ADMIN LOGIN
 function verifyAdminLogin() {
   const pin = document.getElementById("adminPin").value;
-  if (pin === ADMIN_PIN) {
+  const stored = getStoredAdminPin();
+  if (pin === stored) {
     currentRole = "admin";
     localStorage.setItem("karaoke_role", "admin");
     localStorage.setItem("karaoke_userId", "admin");
     document.getElementById("adminLoginSection").classList.add("hidden");
-    document.getElementById("adminDashboard").classList.remove("hidden");
-    waitForFirebase(() => loadUsersList());
+
+    // If the stored PIN is still the default, force admin to change it
+    if (stored === DEFAULT_ADMIN_PIN) {
+      document.getElementById("adminChangePinSection").classList.remove("hidden");
+      document.getElementById("adminChangeMsg").innerHTML = '';
+    } else {
+      document.getElementById("adminDashboard").classList.remove("hidden");
+      waitForFirebase(() => loadUsersList());
+    }
   } else {
     document.getElementById("adminLoginMsg").innerHTML = '<div class="info-box" style="color: #ff0000; border-color: #ff0000;">❌ Wrong PIN</div>';
   }
+}
+
+function saveAdminNewPin() {
+  const a = document.getElementById('newAdminPin').value.trim();
+  const b = document.getElementById('confirmAdminPin').value.trim();
+  const msg = document.getElementById('adminChangeMsg');
+  msg.innerHTML = '';
+  if (!a || a.length < 4) {
+    msg.innerHTML = '<div class="info-box" style="color: #ff0000; border-color: #ff0000;">PIN must be at least 4 characters</div>';
+    return;
+  }
+  if (a !== b) {
+    msg.innerHTML = '<div class="info-box" style="color: #ff0000; border-color: #ff0000;">PINs do not match</div>';
+    return;
+  }
+  setStoredAdminPin(a);
+  document.getElementById('adminChangePinSection').classList.add('hidden');
+  document.getElementById('adminDashboard').classList.remove('hidden');
+  waitForFirebase(() => loadUsersList());
 }
 
 // ADMIN LOGOUT
