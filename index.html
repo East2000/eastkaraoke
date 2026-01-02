@@ -537,7 +537,15 @@ function loadCurrentSong() {
       try {
         window.tvPlayer.loadVideoById(song.videoId);
         window.tvPlayer.setVolume(100);
-        console.log("✅ Video loaded via loadVideoById - waiting for onReady to play");
+        // Small delay to let video load before playing
+        setTimeout(() => {
+          try {
+            window.tvPlayer.playVideo();
+            console.log("✅ Video loaded via loadVideoById and playing");
+          } catch (e) {
+            console.log("⚠️ Error playing video:", e.message);
+          }
+        }, 100);
       } catch (e) {
         console.log("⚠️ Error loading video via API:", e.message);
       }
@@ -621,9 +629,11 @@ function loadCurrentSong() {
                   
                   if (event.data === window.YT.PlayerState.PLAYING) {
                     console.log("✅ Video is playing");
-                  } else if (event.data === window.YT.PlayerState.UNSTARTED) {
-                    console.log("⚠️ Video unstarted, attempting to play...");
+                  } else if (event.data === window.YT.PlayerState.UNSTARTED && !window.playAttempted) {
+                    console.log("⚠️ Video unstarted, attempting to play (once)...");
+                    window.playAttempted = true;
                     event.target.playVideo();
+                    setTimeout(() => { window.playAttempted = false; }, 2000);
                   }
                 },
                 'onError': (event) => {
