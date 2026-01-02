@@ -1,0 +1,26 @@
+{
+  "name": "karaoke-app",
+  "version": "1.0.0",
+  "description": "Complete Videoke System - TV Screen + Phone Controller + Real-time Queue",
+  "main": "index.html",
+  "scripts": {
+    "start": "echo 'Open index.html in browser or use Live Server extension in VS Code'",
+    "deploy": "echo 'Push to GitHub, then import to Vercel.com'"
+  },
+  "keywords": [
+    "karaoke",
+    "videoke",
+    "youtube",
+    "firebase",
+    "real-time",
+    "queue",
+    "singing",
+    "entertainment"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YOUR_USERNAME/karaoke-app.git"
+  }
+}
