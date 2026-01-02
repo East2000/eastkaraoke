@@ -528,6 +528,23 @@ function loadCurrentSong() {
 
     console.log("🎬 Current song detected:", song.title, "ID:", song.videoId, "Timestamp:", song.timestamp);
 
+    console.log("▶️ Loading new video:", song.videoId);
+
+    // If player already exists, just load new video via API (faster for NEXT button)
+    if (window.tvPlayer && typeof window.tvPlayer.loadVideoById === 'function') {
+      console.log("♻️ Reusing existing player, loading new video via API");
+      try {
+        window.tvPlayer.loadVideoById(song.videoId);
+        window.tvPlayer.setVolume(100);
+        window.tvPlayer.playVideo();
+        console.log("✅ Video loaded via loadVideoById and auto-playing");
+      } catch (e) {
+        console.log("⚠️ Error loading video via API:", e.message);
+      }
+      return;
+    }
+
+    // No player yet, need to create one via iframe
     // Get the current player element
     let playerElement = document.getElementById("player");
     
@@ -550,8 +567,6 @@ function loadCurrentSong() {
         return;
       }
     }
-
-    console.log("▶️ Loading new video:", song.videoId);
 
     // Build YouTube embed URL with autoplay (without mute to allow sound)
     const youtubeUrl = `https://www.youtube.com/embed/${song.videoId}?autoplay=1&controls=0&enablejsapi=1&modestbranding=1`;
