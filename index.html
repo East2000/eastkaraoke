@@ -449,8 +449,8 @@ function loadCurrentSong() {
     newIframe.style.border = "none";
     newIframe.style.display = "block";
     
-    // Build YouTube embed URL with autoplay
-    const youtubeUrl = `https://www.youtube.com/embed/${song.videoId}?autoplay=1&controls=0&enablejsapi=1&modestbranding=1`;
+    // Build YouTube embed URL with autoplay and muted
+    const youtubeUrl = `https://www.youtube.com/embed/${song.videoId}?autoplay=1&mute=1&controls=0&enablejsapi=1&modestbranding=1`;
     newIframe.src = youtubeUrl;
     
     console.log("🔗 Loading YouTube URL:", youtubeUrl);
