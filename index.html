@@ -562,9 +562,11 @@ function loadCurrentSong() {
         try {
           // Destroy old player if exists
           if (window.player && typeof window.player.destroy === 'function') {
+            console.log("🗑️ Destroying old player...");
             window.player.destroy();
           }
           
+          console.log("📋 Creating new YT.Player for iframe#player");
           window.player = new YT.Player('player', {
             events: {
               'onReady': (event) => {
@@ -576,6 +578,16 @@ function loadCurrentSong() {
                 console.log("▶️ Playback started via API");
               },
               'onStateChange': (event) => {
+                const states = {
+                  '-1': 'UNSTARTED',
+                  '0': 'ENDED',
+                  '1': 'PLAYING',
+                  '2': 'PAUSED',
+                  '3': 'BUFFERING',
+                  '5': 'CUED'
+                };
+                console.log("📊 Player state changed to:", states[event.data] || event.data);
+                
                 if (event.data === window.YT.PlayerState.PLAYING) {
                   console.log("✅ Video is playing");
                 } else if (event.data === window.YT.PlayerState.UNSTARTED) {
@@ -584,10 +596,11 @@ function loadCurrentSong() {
                 }
               },
               'onError': (event) => {
-                console.error("❌ YouTube Player Error:", event.data);
+                console.error("❌ YouTube Player Error code:", event.data);
               }
             }
           });
+          console.log("✅ Player object created:", !!window.player);
         } catch (e) {
           console.log("⚠️ Player initialization error:", e.message);
           setTimeout(initializePlayer, 500);
