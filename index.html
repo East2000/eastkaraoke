@@ -427,16 +427,24 @@ function setupPlayerControlListener() {
   if (window.db) {
     db.ref("playerControl").on("value", snap => {
       const control = snap.val();
-      if (control && control.action && window.tvPlayer) {
+      
+      // Check if player exists and has the required methods
+      if (control && control.action && window.tvPlayer && typeof window.tvPlayer.pauseVideo === 'function') {
         console.log("📡 Player control command received:", control.action);
         
-        if (control.action === "pause") {
-          window.tvPlayer.pauseVideo();
-          console.log("⏸️ Video paused via remote");
-        } else if (control.action === "play") {
-          window.tvPlayer.playVideo();
-          console.log("▶️ Video resumed via remote");
+        try {
+          if (control.action === "pause") {
+            window.tvPlayer.pauseVideo();
+            console.log("⏸️ Video paused via remote");
+          } else if (control.action === "play") {
+            window.tvPlayer.playVideo();
+            console.log("▶️ Video resumed via remote");
+          }
+        } catch (e) {
+          console.log("⚠️ Player control error:", e.message);
         }
+      } else if (control && control.action) {
+        console.log("ℹ️ Player not ready yet for action:", control.action);
       }
     });
   } else {
