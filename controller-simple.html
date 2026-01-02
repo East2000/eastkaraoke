@@ -438,16 +438,39 @@
 
 <script>
 const DEFAULT_ADMIN_PIN = "1234";
-function getStoredAdminPin() {
-  const p = localStorage.getItem('karaoke_admin_pin');
-  if (!p) {
-    localStorage.setItem('karaoke_admin_pin', DEFAULT_ADMIN_PIN);
-    return DEFAULT_ADMIN_PIN;
-  }
-  return p;
+
+// Hash a PIN using SHA-256 and return hex string
+async function hashPin(pin) {
+  const enc = new TextEncoder();
+  const data = enc.encode(pin);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
-function setStoredAdminPin(newPin) {
-  localStorage.setItem('karaoke_admin_pin', newPin);
+
+// Firebase-backed admin PIN helpers (store hashed PIN at /admin/pinHash)
+function getAdminPinHash() {
+  return db.ref('admin/pinHash').once('value').then(snap => snap.val());
+}
+
+function setAdminPinHash(hash) {
+  return db.ref('admin').update({ pinHash: hash });
+}
+
+async function ensureAdminPinInFirebase() {
+  try {
+    const snap = await db.ref('admin/pinHash').once('value');
+    if (!snap.exists()) {
+      const defaultHash = await hashPin(DEFAULT_ADMIN_PIN);
+      await setAdminPinHash(defaultHash);
+      console.log('Initialized admin pinHash in Firebase');
+      return defaultHash;
+    }
+    return snap.val();
+  } catch (e) {
+    console.error('Error ensuring admin pin in Firebase:', e);
+    return null;
+  }
 }
 
 let currentRole = null;
@@ -466,7 +489,10 @@ function waitForFirebase(callback) {
 
 // CHECK SAVED SESSION ON PAGE LOAD
 window.addEventListener("load", () => {
-  waitForFirebase(() => {
+  waitForFirebase(async () => {
+    // Ensure admin PIN exists in Firebase (initialize if missing)
+    await ensureAdminPinInFirebase();
+
     const savedRole = localStorage.getItem("karaoke_role");
     const savedUserId = localStorage.getItem("karaoke_userId");
     const savedUserName = localStorage.getItem("karaoke_userName");
@@ -514,29 +540,41 @@ function backToLogin() {
 }
 
 // ADMIN LOGIN
-function verifyAdminLogin() {
+async function verifyAdminLogin() {
   const pin = document.getElementById("adminPin").value;
-  const stored = getStoredAdminPin();
-  if (pin === stored) {
-    currentRole = "admin";
-    localStorage.setItem("karaoke_role", "admin");
-    localStorage.setItem("karaoke_userId", "admin");
-    document.getElementById("adminLoginSection").classList.add("hidden");
+  if (!pin) {
+    document.getElementById("adminLoginMsg").innerHTML = '<div class="info-box" style="color: #ff0000; border-color: #ff0000;">Enter PIN</div>';
+    return;
+  }
+  try {
+    const enteredHash = await hashPin(pin);
+    const storedHash = await getAdminPinHash();
+    const defaultHash = await hashPin(DEFAULT_ADMIN_PIN);
 
-    // If the stored PIN is still the default, force admin to change it
-    if (stored === DEFAULT_ADMIN_PIN) {
-      document.getElementById("adminChangePinSection").classList.remove("hidden");
-      document.getElementById("adminChangeMsg").innerHTML = '';
+    if (enteredHash === storedHash) {
+      currentRole = "admin";
+      localStorage.setItem("karaoke_role", "admin");
+      localStorage.setItem("karaoke_userId", "admin");
+      document.getElementById("adminLoginSection").classList.add("hidden");
+
+      // If the stored PIN is still the default, force admin to change it
+      if (storedHash === defaultHash) {
+        document.getElementById("adminChangePinSection").classList.remove("hidden");
+        document.getElementById("adminChangeMsg").innerHTML = '';
+      } else {
+        document.getElementById("adminDashboard").classList.remove("hidden");
+        waitForFirebase(() => loadUsersList());
+      }
     } else {
-      document.getElementById("adminDashboard").classList.remove("hidden");
-      waitForFirebase(() => loadUsersList());
+      document.getElementById("adminLoginMsg").innerHTML = '<div class="info-box" style="color: #ff0000; border-color: #ff0000;">❌ Wrong PIN</div>';
     }
-  } else {
-    document.getElementById("adminLoginMsg").innerHTML = '<div class="info-box" style="color: #ff0000; border-color: #ff0000;">❌ Wrong PIN</div>';
+  } catch (e) {
+    console.error('verifyAdminLogin error', e);
+    document.getElementById("adminLoginMsg").innerHTML = '<div class="info-box" style="color: #ff0000; border-color: #ff0000;">Error verifying PIN</div>';
   }
 }
 
-function saveAdminNewPin() {
+async function saveAdminNewPin() {
   const a = document.getElementById('newAdminPin').value.trim();
   const b = document.getElementById('confirmAdminPin').value.trim();
   const msg = document.getElementById('adminChangeMsg');
@@ -549,10 +587,16 @@ function saveAdminNewPin() {
     msg.innerHTML = '<div class="info-box" style="color: #ff0000; border-color: #ff0000;">PINs do not match</div>';
     return;
   }
-  setStoredAdminPin(a);
-  document.getElementById('adminChangePinSection').classList.add('hidden');
-  document.getElementById('adminDashboard').classList.remove('hidden');
-  waitForFirebase(() => loadUsersList());
+  try {
+    const newHash = await hashPin(a);
+    await setAdminPinHash(newHash);
+    document.getElementById('adminChangePinSection').classList.add('hidden');
+    document.getElementById('adminDashboard').classList.remove('hidden');
+    waitForFirebase(() => loadUsersList());
+  } catch (e) {
+    console.error('saveAdminNewPin error', e);
+    msg.innerHTML = '<div class="info-box" style="color: #ff0000; border-color: #ff0000;">Error saving new PIN</div>';
+  }
 }
 
 // ADMIN LOGOUT
