@@ -972,7 +972,8 @@ function playSong() {
         title: firstSong.title,
         userId: currentUserId,
         userName: currentUserName,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        skipCountdown: true  // Skip countdown when PLAY is clicked
       };
       
       console.log("📤 Writing to currentSong:", songData);

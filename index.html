@@ -487,11 +487,15 @@ function loadCurrentSong() {
     // Show countdown overlay
     const countdownOverlay = document.getElementById("countdownOverlay");
     const countdownText = document.getElementById("countdownText");
-    if (countdownOverlay) {
+    
+    // Check if countdown should be skipped (for PLAY button immediate playback)
+    const shouldSkipCountdown = song.skipCountdown === true;
+    
+    if (countdownOverlay && !shouldSkipCountdown) {
       countdownOverlay.classList.add("show");
     }
 
-    // Start countdown: 3, 2, 1
+    // Start countdown: 3, 2, 1 (or skip if flag is set)
     let count = 3;
     const countdownInterval = setInterval(() => {
       if (countdownText) {
@@ -569,7 +573,7 @@ function loadCurrentSong() {
           singerDisplay.innerText = song.userName || "Unknown Singer";
         }
       }
-    }, 1000);
+    }, shouldSkipCountdown ? 1 : 1000);
   }, error => {
     console.error("❌ Firebase listener error:", error);
   });
