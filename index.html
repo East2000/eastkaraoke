@@ -491,7 +491,15 @@ function generateQR() {
 }
 
 // Load video from current song
+let isLoadingSong = false;
 function loadCurrentSong() {
+  if (isLoadingSong) {
+    console.log("⏳ Already loading a song, skipping...");
+    return;
+  }
+  
+  isLoadingSong = true;
+  
   if (!window.db) {
     console.error("❌ Firebase not available!");
     return;
@@ -610,8 +618,14 @@ function loadCurrentSong() {
     if (singerDisplay) {
       singerDisplay.innerText = song.userName || "Unknown Singer";
     }
+    
+    // Allow next song load after player initializes
+    setTimeout(() => {
+      isLoadingSong = false;
+    }, 500);
   }, error => {
     console.error("❌ Firebase listener error:", error);
+    isLoadingSong = false;
   });
   
   console.log("✅ Listener setup complete");
