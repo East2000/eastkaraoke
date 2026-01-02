@@ -1009,12 +1009,30 @@ function hideBlockedVideoOverlay() {
   if (existing && existing.remove) existing.remove();
 }
 
-// Fullscreen
+// Fullscreen (robust with vendor fallbacks and logging)
 function toggleFullscreen() {
-  if (!document.fullscreenElement) {
-    document.documentElement.requestFullscreen();
-  } else {
-    document.exitFullscreen();
+  try {
+    const doc = document;
+    const docEl = document.documentElement;
+    const isFullscreen = doc.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement;
+
+    if (!isFullscreen) {
+      if (docEl.requestFullscreen) {
+        docEl.requestFullscreen();
+        return;
+      }
+      if (docEl.webkitRequestFullscreen) { docEl.webkitRequestFullscreen(); return; }
+      if (docEl.mozRequestFullScreen) { docEl.mozRequestFullScreen(); return; }
+      if (docEl.msRequestFullscreen) { docEl.msRequestFullscreen(); return; }
+      console.warn('Fullscreen API not supported in this browser');
+    } else {
+      if (doc.exitFullscreen) { doc.exitFullscreen(); return; }
+      if (doc.webkitExitFullscreen) { doc.webkitExitFullscreen(); return; }
+      if (doc.mozCancelFullScreen) { doc.mozCancelFullScreen(); return; }
+      if (doc.msExitFullscreen) { doc.msExitFullscreen(); return; }
+    }
+  } catch (err) {
+    console.error('toggleFullscreen error:', err);
   }
 }
 
