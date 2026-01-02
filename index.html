@@ -408,8 +408,6 @@ function generateQR() {
 }
 
 // Load video from current song
-let lastTimestamp = null;
-
 function loadCurrentSong() {
   if (!window.db) {
     console.error("❌ Firebase not available!");
@@ -431,15 +429,6 @@ function loadCurrentSong() {
 
     console.log("🎬 Current song detected:", song.title, "ID:", song.videoId, "Timestamp:", song.timestamp);
 
-    // Only load if it's a new song (different timestamp)
-    if (song.timestamp === lastTimestamp) {
-      console.log("⏭️ Same request as before, skipping reload");
-      return;
-    }
-
-    lastTimestamp = song.timestamp;
-    console.log("▶️ Loading new video:", song.videoId);
-
     // Get the current player container
     const playerElement = document.getElementById("player");
     const playerContainer = playerElement?.parentElement;
@@ -448,6 +437,8 @@ function loadCurrentSong() {
       console.error("❌ Player container not found!");
       return;
     }
+
+    console.log("▶️ Loading new video:", song.videoId);
 
     // Create new iframe to force reload with autoplay
     const newIframe = document.createElement("iframe");
