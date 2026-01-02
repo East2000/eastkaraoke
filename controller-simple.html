@@ -1337,6 +1337,27 @@ function pauseVideoTV() {
   });
 }
 
+// Request resume (play) from TV screen
+function resumeVideoTV() {
+  if (!currentUserId && !currentRole) {
+    console.log("❌ Not logged in");
+    return;
+  }
+
+  waitForFirebase(() => {
+    db.ref("playerControl").set({
+      action: "play",
+      timestamp: Date.now()
+    }, (error) => {
+      if (error) {
+        console.log("❌ Error sending play command:", error);
+      } else {
+        console.log("▶️ Play command sent to TV");
+      }
+    });
+  });
+}
+
 // (duplicated resume/auto-play block removed)
 
 // PLAY SPECIFIC SONG FROM QUEUE BY KEY
