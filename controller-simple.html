@@ -618,6 +618,9 @@ function showQueue() {
           html += `
             <div class="queue-item" id="song-${key}">
               <div class="queue-item-title">${song.title}</div>
+              <div class="queue-item-buttons">
+                <button class="queue-btn queue-btn-play" onclick="alert('Playing: ${song.title}')">▶ PLAY</button>
+              </div>
             </div>
           `;
           count++;
