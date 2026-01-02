@@ -525,12 +525,19 @@ function loadCurrentSong() {
             events: {
               'onReady': (event) => {
                 console.log("🎬 YouTube Player Ready");
-                // Unmute the auto-played video
+                // Unmute immediately and set volume to max
+                event.target.unMute();
+                event.target.setVolume(100);
+                console.log("🔊 Video unmuted with full volume");
+                
+                // Double-check unmute after short delay
                 setTimeout(() => {
-                  event.target.unMute();
-                  event.target.setVolume(100);
-                  console.log("🔊 Video unmuted with full volume");
-                }, 200);
+                  if (event.target.isMuted && event.target.isMuted()) {
+                    console.log("⚠️ Video still muted, trying again...");
+                    event.target.unMute();
+                    event.target.setVolume(100);
+                  }
+                }, 500);
               },
               'onError': (event) => {
                 console.error("❌ YouTube Player Error:", event.data);
