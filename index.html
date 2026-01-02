@@ -516,8 +516,8 @@ function loadCurrentSong() {
         newIframe.style.display = "block";
         newIframe.style.position = "relative";
         
-        // Build YouTube embed URL with autoplay and muted (required for browser autoplay)
-        const youtubeUrl = `https://www.youtube.com/embed/${song.videoId}?autoplay=1&mute=1&controls=0&enablejsapi=1&modestbranding=1`;
+        // Build YouTube embed URL - no autoplay yet, we'll control via API
+        const youtubeUrl = `https://www.youtube.com/embed/${song.videoId}?controls=0&enablejsapi=1&modestbranding=1`;
         newIframe.src = youtubeUrl;
         
         console.log("🔗 Loading YouTube URL:", youtubeUrl);
@@ -534,30 +534,30 @@ function loadCurrentSong() {
         iframe = newIframe;
         console.log("✅ Video iframe loaded and updated");
         
-        // Create YouTube Player instance to control volume
+        // Play video with volume via YouTube Player API after countdown
         setTimeout(() => {
           try {
             if (window.YT && window.YT.Player) {
               player = new YT.Player('player', {
                 events: {
                   'onReady': (event) => {
-                    console.log("🎬 YouTube Player Ready");
-                    // Unmute after player is ready
-                    setTimeout(() => {
-                      event.target.unMute();
-                      event.target.setVolume(100);
-                      console.log("🔊 Video unmuted via YouTube API");
-                    }, 200);
+                    console.log("🎬 YouTube Player Ready - Starting playback");
+                    // Set volume to 100 FIRST (before playing)
+                    event.target.setVolume(100);
+                    // Then play with sound
+                    event.target.playVideo();
+                    console.log("▶️ Video playing with full volume");
+                  },
+                  'onError': (event) => {
+                    console.error("❌ YouTube Player Error:", event.data);
                   }
                 }
               });
-            } else {
-              console.log("ℹ️ YouTube API not ready yet");
             }
           } catch (e) {
-            console.log("⚠️ Could not unmute:", e.message);
+            console.log("⚠️ Could not initialize player:", e.message);
           }
-        }, 500);
+        }, 100);
         
         // Update singer display
         if (singerDisplay) {
