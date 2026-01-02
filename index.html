@@ -513,10 +513,10 @@ function loadCurrentSong() {
     console.log("✅ Video iframe loaded and updated");
     
     // Video will autoplay via URL parameter autoplay=1
-    // YouTube Player API for volume control (if available)
-    if (window.YT && window.YT.Player) {
-      setTimeout(() => {
-        try {
+    // YouTube Player API for actual playback control
+    setTimeout(() => {
+      try {
+        if (window.YT && window.YT.Player) {
           // Destroy old player if exists
           if (window.player && typeof window.player.destroy === 'function') {
             window.player.destroy();
@@ -525,17 +525,29 @@ function loadCurrentSong() {
           window.player = new YT.Player('player', {
             events: {
               'onReady': (event) => {
-                console.log("🎬 YouTube Player Ready");
+                console.log("🎬 YouTube Player Ready - Starting playback");
                 event.target.setVolume(100);
-                console.log("🔊 Volume set to 100%");
+                event.target.playVideo();  // Explicitly play the video
+                console.log("▶️ Playback started via API");
+              },
+              'onStateChange': (event) => {
+                if (event.data === window.YT.PlayerState.PLAYING) {
+                  console.log("✅ Video is playing");
+                } else if (event.data === window.YT.PlayerState.UNSTARTED) {
+                  console.log("⚠️ Video unstarted, attempting to play...");
+                  event.target.playVideo();
+                }
+              },
+              'onError': (event) => {
+                console.error("❌ YouTube Player Error:", event.data);
               }
             }
           });
-        } catch (e) {
-          console.log("ℹ️ Player API not available, using autoplay parameter only");
         }
-      }, 500);
-    }
+      } catch (e) {
+        console.log("⚠️ Player initialization error:", e.message);
+      }
+    }, 100);
     
     // Update singer display
     if (singerDisplay) {
