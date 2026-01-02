@@ -408,7 +408,7 @@
       <div class="section-title">� LIST RESERVE</div>      
       <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 15px;">
         <button onclick="stopSong()" style="background: #ff0000; font-weight: bold; padding: 12px;">⏹️ STOP</button>
-        <button id="playPauseBtn" onclick="togglePlayPause()" style="background: #00ff00; color: black; font-weight: bold; padding: 12px;">▶️ PLAY</button>
+        <button id="playPauseBtn" onclick="togglePlayPause()" style="background: #00ff00; color: black; font-weight: bold; padding: 12px; font-size: 24px;">▶️</button>
         <button onclick="nextSong()" style="background: #ff6600; font-weight: bold; padding: 12px;">⏭️ NEXT</button>
       </div>
       <div id="queueList">
@@ -914,17 +914,37 @@ function togglePlayPause() {
   const btn = document.getElementById("playPauseBtn");
   
   if (isPlaying) {
-    // Currently playing - pause
+    // Currently playing - pause the video
     isPlaying = false;
-    btn.textContent = "▶️ PLAY";
+    btn.textContent = "▶️";
     btn.style.background = "#00ff00";
-    stopSong();
+    pauseVideoTV();  // Pause video in index.html
   } else {
-    // Currently paused - play
+    // Currently paused - resume the video
     isPlaying = true;
-    btn.textContent = "⏸️ PAUSE";
+    btn.textContent = "⏸️";
     btn.style.background = "#ffaa00";
-    playSong();
+    resumeVideoTV();  // Resume video in index.html
+  }
+}
+
+// Request pause from TV screen
+function pauseVideoTV() {
+  if (window.tvPlayer && window.tvPlayer.pauseVideo) {
+    window.tvPlayer.pauseVideo();
+    console.log("⏸️ Video paused");
+  } else {
+    console.log("ℹ️ TV player not available");
+  }
+}
+
+// Request resume from TV screen
+function resumeVideoTV() {
+  if (window.tvPlayer && window.tvPlayer.playVideo) {
+    window.tvPlayer.playVideo();
+    console.log("▶️ Video resumed");
+  } else {
+    console.log("ℹ️ TV player not available");
   }
 }
 

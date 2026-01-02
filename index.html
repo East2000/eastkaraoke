@@ -528,6 +528,8 @@ function loadCurrentSong() {
                 console.log("🎬 YouTube Player Ready - Starting playback");
                 event.target.setVolume(100);
                 event.target.playVideo();  // Explicitly play the video
+                // Make player accessible to controller for pause/resume
+                window.tvPlayer = event.target;
                 console.log("▶️ Playback started via API");
               },
               'onStateChange': (event) => {
