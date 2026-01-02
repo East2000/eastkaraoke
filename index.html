@@ -580,7 +580,13 @@ function loadCurrentSong() {
     const youtubeUrl = `https://www.youtube.com/embed/${song.videoId}?autoplay=1&controls=0&enablejsapi=1&modestbranding=1`;
     
     console.log("🔗 Loading YouTube URL:", youtubeUrl);
-    
+
+    // Clear any previous blocked overlay when loading a new video
+    hideBlockedVideoOverlay();
+
+    // Remember current video id for error handlers
+    window.currentVideoId = song.videoId;
+
     // Just update the src to load new video
     playerElement.src = youtubeUrl;
     iframe = playerElement;
@@ -638,12 +644,43 @@ function loadCurrentSong() {
                 },
                 'onError': (event) => {
                   console.error("❌ YouTube Player Error code:", event.data);
+                  const code = event.data;
+
+                  // Owner-restriction / embed disabled codes (101 and 150)
+                  if (code === 101 || code === 150) {
+                    console.warn("⚠️ Video blocked from playback on embedded players (owner restriction). Showing fallback.");
+                    showBlockedVideoOverlay(window.currentVideoId, "This video cannot be played on external sites.");
+                  } else if (code === 100) {
+                    console.warn("⚠️ Video not found or removed from YouTube.");
+                    showBlockedVideoOverlay(window.currentVideoId, "Video not found or removed from YouTube.");
+                  } else {
+                    // For other errors, try a single retry then show a generic notice
+                    setTimeout(() => {
+                      try { event.target.playVideo(); } catch (e) { /* ignore */ }
+                    }, 800);
+                    setTimeout(() => {
+                      showBlockedVideoOverlay(window.currentVideoId, "Playback failed — try opening on YouTube.");
+                    }, 3000);
+                  }
                 }
               }
             });
             // Set tvPlayer immediately after creation for pause/resume control
             window.tvPlayer = window.player;
             console.log("✅ Player object created and tvPlayer set:", !!window.tvPlayer);
+            // Watchdog: if playback doesn't start within a few seconds, show fallback
+            setTimeout(() => {
+              try {
+                if (window.player && typeof window.player.getPlayerState === 'function') {
+                  const state = window.player.getPlayerState();
+                  if (state !== window.YT.PlayerState.PLAYING) {
+                    showBlockedVideoOverlay(window.currentVideoId, 'Playback did not start — try opening on YouTube or disable ad-blockers.');
+                  }
+                }
+              } catch (e) {
+                /* ignore */
+              }
+            }, 5000);
           }, 100);
         } catch (e) {
           console.log("⚠️ Player initialization error:", e.message);
@@ -873,6 +910,72 @@ function showScoreOverlay(singerName, score = null) {
   setTimeout(() => {
     overlay.classList.remove("show");
   }, 3000);
+}
+
+// Show a friendly overlay when a video is blocked or cannot play in an embed
+function showBlockedVideoOverlay(videoId, message) {
+  try {
+    hideBlockedVideoOverlay();
+    const playerSection = document.querySelector('.player-section') || document.body;
+    const overlay = document.createElement('div');
+    overlay.id = 'blockedVideoOverlay';
+    overlay.style.position = 'absolute';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.display = 'flex';
+    overlay.style.flexDirection = 'column';
+    overlay.style.justifyContent = 'center';
+    overlay.style.alignItems = 'center';
+    overlay.style.background = 'rgba(0,0,0,0.85)';
+    overlay.style.zIndex = '2000';
+    overlay.style.color = '#fff';
+    overlay.style.padding = '20px';
+    overlay.style.textAlign = 'center';
+
+    const text = document.createElement('div');
+    text.style.fontSize = '20px';
+    text.style.marginBottom = '16px';
+    text.innerText = message || 'This video cannot be played on external sites.';
+
+    const link = document.createElement('a');
+    link.href = `https://www.youtube.com/watch?v=${videoId}`;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.style.background = '#ff006e';
+    link.style.color = '#fff';
+    link.style.padding = '10px 16px';
+    link.style.borderRadius = '6px';
+    link.style.textDecoration = 'none';
+    link.style.marginBottom = '8px';
+    link.innerText = 'Watch on YouTube';
+
+    const dismiss = document.createElement('button');
+    dismiss.innerText = 'Dismiss';
+    dismiss.style.marginLeft = '8px';
+    dismiss.style.padding = '10px 16px';
+    dismiss.style.borderRadius = '6px';
+    dismiss.onclick = hideBlockedVideoOverlay;
+
+    overlay.appendChild(text);
+    overlay.appendChild(link);
+    overlay.appendChild(dismiss);
+
+    // Ensure container can hold absolute overlay
+    if (playerSection.style.position === '' || playerSection.style.position === 'static') {
+      playerSection.style.position = 'relative';
+    }
+
+    playerSection.appendChild(overlay);
+  } catch (e) {
+    console.error('Error showing blocked video overlay:', e);
+  }
+}
+
+function hideBlockedVideoOverlay() {
+  const existing = document.getElementById('blockedVideoOverlay');
+  if (existing && existing.remove) existing.remove();
 }
 
 // Fullscreen
