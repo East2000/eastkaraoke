@@ -512,12 +512,11 @@ function loadCurrentSong() {
 
     console.log("🎬 Current song detected:", song.title, "ID:", song.videoId, "Timestamp:", song.timestamp);
 
-    // Get the current player container
-    const playerElement = document.getElementById("player");
-    const playerContainer = playerElement?.parentElement;
+    // Get the current player element
+    let playerElement = document.getElementById("player");
     
-    if (!playerContainer) {
-      console.error("❌ Player container not found!");
+    if (!playerElement) {
+      console.error("❌ Player element not found!");
       return;
     }
 
@@ -539,17 +538,10 @@ function loadCurrentSong() {
     
     console.log("🔗 Loading YouTube URL:", youtubeUrl);
     
-    // Clear and add new iframe (but keep countdown overlay inside)
-    const countdownDiv = playerContainer.querySelector("#countdownOverlay");
-    playerContainer.innerHTML = "";
-    playerContainer.appendChild(newIframe);
-    if (countdownDiv) {
-      playerContainer.appendChild(countdownDiv);
-    }
-    
-    // Update global reference
+    // Replace old iframe with new one (don't destroy the container)
+    playerElement.parentElement.replaceChild(newIframe, playerElement);
     iframe = newIframe;
-    console.log("✅ Video iframe loaded and updated");
+    console.log("✅ Video iframe replaced and updated");
     
     // Video will autoplay via URL parameter autoplay=1
     // YouTube Player API for actual playback control
