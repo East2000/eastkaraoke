@@ -484,15 +484,6 @@ function loadCurrentSong() {
 
     console.log("▶️ Loading new video:", song.videoId);
 
-    // Get the current player container
-    const playerElement = document.getElementById("player");
-    const playerContainer = playerElement?.parentElement;
-    
-    if (!playerContainer) {
-      console.error("❌ Player container not found!");
-      return;
-    }
-
     // Create new iframe to force reload with autoplay
     const newIframe = document.createElement("iframe");
     newIframe.id = "player";
