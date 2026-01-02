@@ -1082,15 +1082,51 @@ function clearAllQueue() {
   }
 }
 
-// STOP SONG - Clear current song
+// STOP SONG - Clear current song and play next from queue
 function nextSongForce() {
   waitForFirebase(() => {
+    // First, remove current song
     db.ref("currentSong").remove((error) => {
       if (error) {
         console.log("❌ Error stopping song:", error);
-      } else {
-        console.log("⏹️ Current song stopped");
+        return;
       }
+      console.log("⏹️ Current song stopped");
+      
+      // Now fetch the queue and play the first song
+      db.ref("queue").once("value", snap => {
+        const queue = snap.val();
+        if (queue && Object.keys(queue).length > 0) {
+          // Get the first song in queue
+          let firstKey = null;
+          let firstSong = null;
+          Object.entries(queue).forEach(([key, song]) => {
+            if (!firstKey) {
+              firstKey = key;
+              firstSong = song;
+            }
+          });
+          
+          if (firstSong) {
+            // Set it as current song
+            const songData = {
+              videoId: firstSong.videoId,
+              title: firstSong.title,
+              userId: firstSong.userId,
+              userName: firstSong.userName,
+              timestamp: Date.now()
+            };
+            
+            db.ref("currentSong").set(songData, (error) => {
+              if (!error) {
+                console.log("▶️ Next song auto-playing:", firstSong.title);
+              }
+            });
+          }
+        } else {
+          console.log("📭 Queue is empty");
+        }
+      });
     });
   });
 }
